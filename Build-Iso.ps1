@@ -30,12 +30,12 @@ function Check-Hash {
 
 function Extract-ISO {
     Remove-Item -LiteralPath ".\temp\working\" -Force -Recurse
-    New-Item -Path .\temp\working -ItemType Directory
+    New-Item -Path .\temp\working -ItemType Directory | Out-Null
 
     Dismount-DiskImage -ImagePath "$pwd\isos\source.iso"
     Mount-DiskImage -ImagePath "$pwd\isos\source.iso"
 
-    $ISOMount = Get-PSDrive | Where-Object {$_.Description -eq "WXPVOL_EN"}
+    $ISOMount = Get-PSDrive | Where-Object {$_.Description -eq "GRTMPVOL_EN"}
     $ISODriveLetter = $ISOMount.Root
 
     Copy-Item -Path "$ISODriveLetter\*" -Destination "$pwd\temp\working" -Recurse -Force
@@ -43,22 +43,58 @@ function Extract-ISO {
     Dismount-DiskImage -ImagePath "$pwd\isos\source.iso"
 }
 
-function Slipstream-ServicePacks {
+function Slipstream-Drivers {
+    Start-Process "$Env:Programfiles\Git\usr\bin\patch.exe" -Wait -ArgumentList "$pwd\temp\working\i386\TXTSETUP.SIF $pwd\slipstream\drivers\TXTSETUP.SIF.patch"
+    New-Item -Path .\temp\working\i386\NLDRV\ -ItemType Directory | Out-Null
+    Copy-Item -Path .\slipstream\drivers\001\ -Destination .\temp\working\i386\NLDRV\ -Recurse -Force
+    Copy-Item -Path .\slipstream\drivers\002\ -Destination .\temp\working\i386\NLDRV\ -Recurse -Force
+
+    Copy-Item -Path .\smss.exe -Destination .\temp\working\i386\SYSTEM32 -Force
 }
+
 
 function Check-MSBinaries {
     Write-Host "Calculating hashes, this may take some time."
 
-    Check-Hash -TargetPath .\isos\source.iso -ExpectedHash "5DB1A137BA7BC8B561A1DD120F5C7D8D" -FileTitle "Source ISO" -SpecificError "Please ensure you are using an unmodified copy of 32-bit en_us VL Windows XP RTM."
-    Check-Hash -TargetPath .\slipstream\servicepacks\sp3.exe -ExpectedHash "BB25707C919DD835A9D9706B5725AF58" -FileTitle "Service Pack 3" -SpecificError "Please ensure you are using an unmodified copy of the Windows XP Service Pack 3 EXE."
+    Check-Hash -TargetPath .\isos\source.iso -ExpectedHash "5BF476E2FC445B8D06B3C2A6091FE3AA" -FileTitle "Source ISO" -SpecificError "Please ensure you are using an unmodified copy of 32-bit en_us VL Windows XP SP3."
+
+    if (!(Test-Path -Path $Env:Programfiles\Git\usr\bin\patch.exe)) {
+        throw [System.IO.FileNotFoundException]::new("Git for Windows binaries were not found, please ensure you have Git for Windows installed.")
+    }
+
+}
+
+function Download-Tools {
+    if (!(Test-Path -Path .\tools\rh\ResourceHacker.exe)) {
+        Invoke-WebRequest -Uri "https://www.angusj.com/resourcehacker/resource_hacker.zip" -OutFile .\tools\resource_hacker.zip
+        New-Item -Path .\tools\rh -ItemType Directory | Out-Null
+        Expand-Archive -Path .\tools\resource_hacker.zip -DestinationPath .\tools\rh\
+        Remove-Item -Path .\tools\resource_hacker.zip
+    }
+
+    if(!(Test-Path -Path .\tools\7zr.exe)) {
+        Invoke-WebRequest -Uri "https://7-zip.org/a/7zr.exe" -OutFile .\tools\7zr.exe
+    }
+}
+
+function RH-Compile {
+    & $pwd\tools\rh\ResourceHacker.exe -open $pwd\assets\rc\smss_message.rc -save assets\res\smss_message.res -action compile -log nul
+}
+
+function RH-Script {
+    & $pwd\tools\rh\ResourceHacker.exe -script $pwd\script\rh\smss.rh
 }
 
 function Compile-ISO {
-    & $pwd\assets\binaries\CDIMAGE.EXE -lHMW -b"$pwd\assets\binaries\boot.img" -m -h -n "$pwd\temp\working\" "$pwd\isos\output.iso" 
+    & $pwd\tools\CDIMAGE.EXE -lGRTMPVOL_EN -b"$pwd\assets\binaries\boot.img" -m -h -n "$pwd\temp\working\" "$pwd\isos\output.iso" 
 }
+
 
 Check-Host
 Check-MSBinaries
+Download-Tools
+RH-Compile
+RH-Script
 Extract-ISO
-Slipstream-ServicePacks
+Slipstream-Drivers
 Compile-ISO

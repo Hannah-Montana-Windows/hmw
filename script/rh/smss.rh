@@ -1,0 +1,9 @@
+  [FILENAMES]
+  Exe=    ..\..\temp\working\i386\SYSTEM32\SMSS.exe
+  SaveAs= ..\..\temp\working\i386\SYSTEM32\SMSS.exe
+  Log= nul
+  
+  [COMMANDS]
+  -delete MESSAGETABLE,,1033
+  -add ..\..\assets\res\smss_message.res MESSAGETABLE,,1033
+  -changelanguage(1033)

@@ -1,1 +1,9 @@
 temp/working/*
+*.iso*
+*.res
+tools/rh
+tools/7zr.exe
+
+*.*_
+*.DIFF
+*.iso

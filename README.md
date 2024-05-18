@@ -14,7 +14,7 @@ It's very early days, the script just builds an unmodified XP iso.
 
 Hannah Montana Windows does not contain any Microsoft OS materials. You must provide these yourself.
 
-Replace `isos\source.iso` with an unmodified copy of Windows XP 32-bit RTM en_us VL. This should have an MD5 has of `5DB1A137BA7BC8B561A1DD120F5C7D8D`.
+Replace `isos\source.iso` with an unmodified copy of Windows XP 32-bit SP3 en_us VL. This should have an MD5 has of `b`.
 
 Replace `slipstream\servicepacks\sp3.exe` with a copy of the Windows XP Service Pack 3 update. This should have an MD5 hash of `BB25707C919DD835A9D9706B5725AF58`.
 
